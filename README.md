@@ -245,4 +245,129 @@ left join return_status as r
 on i.issued_id = r.issued_id
 where r.return_id is null
 ```
+## Advanced SQL Operations
 
+**Task 13: Identify Members with Overdue Books**  
+Write a query to identify members who have overdue books (assume a 30-day return period). Display the member's_id, member's name, book title, issue date, and days overdue.
+```sql
+select 
+	ist.issued_member_id,
+	m.member_name,
+	bk.book_title,
+	ist.issued_date,
+	--rts.return_date,
+	current_date-ist.issued_date as overdue
+from issued_status as ist
+join members as m
+on ist.issued_member_id=m.member_id
+join books as bk
+on ist.issued_book_isbn=bk.isbn
+left join return_status as rts
+on ist.issued_id=rts.issued_id
+where rts.return_date is null
+	and (current_date-ist.issued_date)>30
+order by ist.issued_member_id
+
+
+```
+**Task 14: Update Book Status on Return**  
+Write a query to update the status of books in the books table to "Yes" when they are returned (based on entries in the return_status table).
+```sql
+--manual process
+select * from books
+select * from issued_status
+select * from return_status
+
+select * from issued_status
+where issued_book_isbn='978-0-375-41398-8'
+
+select * from return_status
+where issued_id='IS134'
+
+select * from books
+where isbn='978-0-375-41398-8'
+
+insert into return_status(return_id,issued_id,return_date,book_quality)
+values('RS120','IS134',current_date,'good')
+
+update books
+set status='yes'
+where isbn='978-0-375-41398-8'
+
+--code 
+create or replace procedure add_return_records(p_return_id varchar(10),p_issued_id varchar(10),p_book_quality varchar(20))
+language plpgsql
+as $$
+declare
+	v_isbn varchar(20);
+	v_book_name varchar(90);
+begin
+--all logic and code
+--inserting into returns based on user input
+insert into return_status(return_id,issued_id,return_date,book_quality)
+values
+(p_return_id,p_issued_id,current_date,p_book_quality);
+
+
+select
+	issued_book_isbn,
+	issued_book_name
+	into
+	v_isbn,
+	v_book_name
+from issued_status
+where issued_id=p_issued_id;
+
+update books
+set status='yes'
+where isbn=v_isbn;
+
+raise notice'Thank you for returning the book : %',v_book_name;
+end;
+$$
+
+--testing
+/* issued_id=IS135
+ISBN = WHERE isbn = '978-0-307-58837-1'
+*/
+select * from books
+where isbn='978-0-307-58837-1'
+
+select * from issued_status
+where issued_book_isbn='978-0-307-58837-1'
+
+select * from return_status
+where issued_id='IS135'
+
+--calling function
+call add_return_records('RS138','IS135','good')
+```
+
+**Task 15: Branch Performance Report**  
+Create a query that generates a performance report for each branch, showing the number of books issued, the number of books returned, and the total revenue generated from book rentals.
+```sql
+select * from branch
+select * from employees
+select * from issued_status
+select * from return_status
+
+create table branch_report
+as
+	select 
+		b.branch_id,
+		b.manager_id,
+		count(ist.issued_id) as issued_cnt,
+		count(rts.return_id) as return_cnt,
+		sum(bk.rental_price :: numeric) as total_revenue
+	from branch as b
+	join employees as e
+	on b.branch_id=e.branch_id
+	join issued_status as ist
+	on ist.issued_emp_id=e.emp_id
+	join books as bk
+	on ist.issued_book_isbn=bk.isbn
+	left join return_status as rts
+	on ist.issued_id=rts.issued_id
+	group by 1,2
+
+```
