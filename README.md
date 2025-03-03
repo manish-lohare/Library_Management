@@ -245,3 +245,4 @@ left join return_status as r
 on i.issued_id = r.issued_id
 where r.return_id is null
 ```
+
