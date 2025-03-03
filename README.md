@@ -476,3 +476,33 @@ call issue_book('IS159','C108','978-0-141-44171-6','E104')
 
 ```
 
+**Task 20: Create Table As Select (CTAS)**
+Objective: Create a CTAS (Create Table As Select) query to identify overdue books and calculate fines.
+
+Description: Write a CTAS query to create a new table that lists each member and the books they have issued but not returned within 30 days. The table should include:
+    The number of overdue books.
+    The total fines, with each day's fine calculated at $0.50.
+    The number of books issued by each member.
+    The resulting table should show:
+    Member ID
+    Number of overdue books
+    Total fines
+```sql
+create table fines as
+	select 
+		m.member_id,
+		count(ist.issued_id) as no_overdue_books,
+		current_date-ist.issued_date as overdue,
+		(current_date-ist.issued_date)*0.5 as total_fine
+	from issued_status as ist
+	join members as m
+	on ist.issued_member_id=m.member_id
+	join books as bk
+	on ist.issued_book_isbn=bk.isbn
+	left join return_status as rts
+	on ist.issued_id=rts.issued_id
+	where rts.return_date is null
+		and (current_date-ist.issued_date)>30
+	group by 1,overdue
+
+```
