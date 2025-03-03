@@ -385,3 +385,21 @@ create table active_member as
 
 
 ```
+**Task 17: Find Employees with the Most Book Issues Processed**  
+Write a query to find the top 3 employees who have processed the most book issues. Display the employee name, number of books processed, and their branch.
+```sql
+select 
+	e.emp_id,
+	e.emp_name,
+	count(ist.issued_member_id) as cnt_issued_book,
+	b.branch_id
+from employees as e
+join issued_status as ist
+on e.emp_id=ist.issued_emp_id
+join branch as b
+on b.branch_id=e.branch_id
+group by e.emp_id,b.branch_id
+order by cnt_issued_book desc
+limit 3
+
+```
