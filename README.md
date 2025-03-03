@@ -403,3 +403,23 @@ order by cnt_issued_book desc
 limit 3
 
 ```
+
+**Task 18: Identify Members Issuing High-Risk Books**  
+Write a query to identify members who have issued books more than twice with the status "damaged" in the books table. Display the member name, book title, and the number of times they've issued damaged books.    
+```sql
+select 
+	m.member_name,
+	b.book_title,
+	count(m.member_id) as cnt_issued_damage_book
+from return_status as rts
+join issued_status as ist
+on rts.issued_id=ist.issued_id
+join members as m
+on ist.issued_member_id=m.member_id
+join books as b
+on b.isbn=ist.issued_book_isbn
+where rts.book_quality='damage'
+group by 1,2
+having count(m.member_id)>2
+```
+
